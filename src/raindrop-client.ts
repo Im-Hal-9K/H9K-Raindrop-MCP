@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 import {
   RaindropConfig,
   Raindrop,
@@ -11,17 +11,94 @@ import {
   UpdateCollectionParams
 } from './types.js';
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+const REQUEST_TIMEOUT_MS = 30000;
+
+// Helper to delay execution
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Check if error is retryable
+function isRetryableError(error: AxiosError): boolean {
+  if (!error.response) {
+    // Network errors (no response) are retryable
+    return true;
+  }
+  const status = error.response.status;
+  // Retry on rate limits and server errors
+  return status === 429 || (status >= 500 && status < 600);
+}
+
+// Format error for better Claude understanding (prevents retry loops)
+function formatError(error: AxiosError): string {
+  if (!error.response) {
+    return `Network error: ${error.message}. The Raindrop.io API may be temporarily unavailable. DO NOT RETRY - this is a connectivity issue.`;
+  }
+
+  const status = error.response.status;
+  const data = error.response.data as any;
+
+  switch (status) {
+    case 400:
+      return `Bad request: ${data?.errorMessage || data?.error || 'Invalid parameters provided'}. Please check the input values and DO NOT RETRY with the same parameters.`;
+    case 401:
+      return 'Authentication failed: Invalid or expired API token. Please check your RAINDROP_API_TOKEN. DO NOT RETRY - user must fix the token.';
+    case 403:
+      return 'Access denied: You do not have permission for this operation. DO NOT RETRY.';
+    case 404:
+      return `Not found: The requested resource does not exist. It may have been deleted. DO NOT RETRY.`;
+    case 429:
+      return 'Rate limited: Too many requests. The server has already retried. Please inform the user to wait before trying again.';
+    default:
+      if (status >= 500) {
+        return `Raindrop.io server error (${status}): The service is temporarily unavailable. Already retried ${MAX_RETRIES} times.`;
+      }
+      return `API error (${status}): ${data?.errorMessage || data?.error || error.message}. DO NOT RETRY.`;
+  }
+}
+
 export class RaindropClient {
   private client: AxiosInstance;
 
   constructor(config: RaindropConfig) {
     this.client = axios.create({
       baseURL: config.baseUrl || 'https://api.raindrop.io/rest/v1',
+      timeout: REQUEST_TIMEOUT_MS,
       headers: {
         'Authorization': `Bearer ${config.apiToken}`,
         'Content-Type': 'application/json'
       }
     });
+
+    // Add response interceptor for retry logic and better error handling
+    this.client.interceptors.response.use(
+      response => response,
+      async (error: AxiosError) => {
+        const config = error.config;
+        if (!config) {
+          throw new Error(formatError(error));
+        }
+
+        // Get retry count from config
+        const retryCount = (config as any).__retryCount || 0;
+
+        // Check if we should retry
+        if (retryCount < MAX_RETRIES && isRetryableError(error)) {
+          (config as any).__retryCount = retryCount + 1;
+
+          // Calculate delay with exponential backoff
+          const backoffDelay = RETRY_DELAY_MS * Math.pow(2, retryCount);
+          console.error(`Request failed, retrying in ${backoffDelay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
+
+          await delay(backoffDelay);
+          return this.client.request(config);
+        }
+
+        // No more retries, throw formatted error
+        throw new Error(formatError(error));
+      }
+    );
   }
 
   // Bookmark (Raindrop) methods

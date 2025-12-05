@@ -7,7 +7,6 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
-import { z } from 'zod';
 import { RaindropClient } from './raindrop-client.js';
 
 const API_TOKEN = process.env.RAINDROP_API_TOKEN;
@@ -18,6 +17,9 @@ if (!API_TOKEN) {
 }
 
 const client = new RaindropClient({ apiToken: API_TOKEN });
+
+// Track server state for graceful shutdown
+let isShuttingDown = false;
 
 // Define all the tools
 const tools: Tool[] = [
@@ -318,7 +320,7 @@ const tools: Tool[] = [
 const server = new Server(
   {
     name: 'h9k-raindrop-mcp',
-    version: '1.0.0',
+    version: '1.0.1',
   },
   {
     capabilities: {
@@ -329,11 +331,26 @@ const server = new Server(
 
 // Handle tool listing
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+  if (isShuttingDown) {
+    throw new Error('Server is shutting down. Please wait and try again.');
+  }
   return { tools };
 });
 
 // Handle tool execution
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  if (isShuttingDown) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Error: Server is shutting down. Please wait and try again. DO NOT RETRY immediately.'
+        }
+      ],
+      isError: true
+    };
+  }
+
   const { name, arguments: args } = request.params;
 
   try {
@@ -554,14 +571,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       default:
-        throw new Error(`Unknown tool: ${name}`);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Unknown tool: ${name}. Available tools: ${tools.map(t => t.name).join(', ')}. DO NOT RETRY with the same tool name.`
+            }
+          ],
+          isError: true
+        };
     }
   } catch (error: any) {
+    // Error is already formatted by the client with DO NOT RETRY messages
     return {
       content: [
         {
           type: 'text',
-          text: `Error: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ''}`
+          text: `Error: ${error.message}`
         }
       ],
       isError: true
@@ -569,11 +595,37 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
+// Graceful shutdown handling
+async function shutdown(signal: string) {
+  console.error(`Received ${signal}, shutting down gracefully...`);
+  isShuttingDown = true;
+
+  // Give pending requests time to complete
+  setTimeout(() => {
+    console.error('Shutdown complete');
+    process.exit(0);
+  }, 5000);
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+// Handle uncaught errors to prevent crashes
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
+  // Don't exit - try to keep the server running
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled rejection at:', promise, 'reason:', reason);
+  // Don't exit - try to keep the server running
+});
+
 // Start the server
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('H9K Raindrop MCP Server running on stdio');
+  console.error('H9K Raindrop MCP Server v1.0.1 running on stdio');
 }
 
 main().catch((error) => {
