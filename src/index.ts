@@ -320,7 +320,7 @@ const tools: Tool[] = [
 const server = new Server(
   {
     name: 'h9k-raindrop-mcp',
-    version: '1.0.2',
+    version: '1.0.3',
   },
   {
     capabilities: {
@@ -648,7 +648,7 @@ process.on('unhandledRejection', (reason, promise) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('H9K Raindrop MCP Server v1.0.2 running on stdio');
+  console.error('H9K Raindrop MCP Server v1.0.3 running on stdio');
 }
 
 main().catch((error) => {
