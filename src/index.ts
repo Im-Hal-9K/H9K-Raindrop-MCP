@@ -320,7 +320,7 @@ const tools: Tool[] = [
 const server = new Server(
   {
     name: 'h9k-raindrop-mcp',
-    version: '1.0.1',
+    version: '1.0.2',
   },
   {
     capabilities: {
@@ -610,8 +610,31 @@ async function shutdown(signal: string) {
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
+// Handle EPIPE errors on stdout/stderr - this happens when the client disconnects
+// while we're trying to write a response
+process.stdout.on('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EPIPE') {
+    // Client disconnected - exit gracefully
+    process.exit(0);
+  }
+  console.error('stdout error:', error);
+});
+
+process.stderr.on('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EPIPE') {
+    // Client disconnected - exit gracefully
+    process.exit(0);
+  }
+  // Can't log to stderr if stderr has an error, just exit
+  process.exit(1);
+});
+
 // Handle uncaught errors to prevent crashes
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error: NodeJS.ErrnoException) => {
+  // EPIPE means client disconnected - exit gracefully
+  if (error.code === 'EPIPE') {
+    process.exit(0);
+  }
   console.error('Uncaught exception:', error);
   // Don't exit - try to keep the server running
 });
@@ -625,7 +648,7 @@ process.on('unhandledRejection', (reason, promise) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('H9K Raindrop MCP Server v1.0.1 running on stdio');
+  console.error('H9K Raindrop MCP Server v1.0.2 running on stdio');
 }
 
 main().catch((error) => {

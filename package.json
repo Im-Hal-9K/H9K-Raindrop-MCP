@@ -1,6 +1,6 @@
 {
   "name": "h9k-raindrop-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "H9K Raindrop MCP - A powerful MCP server for Raindrop.io bookmark management",
   "type": "module",
   "bin": {
