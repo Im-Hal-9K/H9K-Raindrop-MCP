@@ -1,6 +1,6 @@
-# Raindrop.io MCP Server
+# H9K Raindrop MCP
 
-A Model Context Protocol (MCP) server for interacting with Raindrop.io bookmarks. This server exposes 14 comprehensive tools for managing your bookmarks, collections, and tags through the Raindrop.io API.
+A powerful Model Context Protocol (MCP) server for interacting with Raindrop.io bookmarks. This server exposes 14 comprehensive tools for managing your bookmarks, collections, and tags through the Raindrop.io API.
 
 ## Features
 
@@ -28,9 +28,10 @@ A Model Context Protocol (MCP) server for interacting with Raindrop.io bookmarks
 
 ## Installation
 
-1. Clone or create this repository:
+1. Clone this repository:
 ```bash
-cd raindrop-mcp
+git clone https://github.com/YOUR_USERNAME/H9K-Raindrop-MCP.git
+cd H9K-Raindrop-MCP
 ```
 
 2. Install dependencies:
@@ -62,9 +63,9 @@ Add this to your Claude Desktop configuration file:
 ```json
 {
   "mcpServers": {
-    "raindrop": {
+    "h9k-raindrop": {
       "command": "node",
-      "args": ["C:\\Users\\hfgot\\raindrop-mcp\\build\\index.js"],
+      "args": ["C:\\Users\\YOUR_USERNAME\\H9K-Raindrop-MCP\\build\\index.js"],
       "env": {
         "RAINDROP_API_TOKEN": "your-api-token-here"
       }
@@ -73,7 +74,7 @@ Add this to your Claude Desktop configuration file:
 }
 ```
 
-Replace `C:\\Users\\hfgot\\raindrop-mcp\\build\\index.js` with the absolute path to your built index.js file, and replace `your-api-token-here` with your actual Raindrop.io API token.
+Replace `C:\\Users\\YOUR_USERNAME\\H9K-Raindrop-MCP\\build\\index.js` with the absolute path to your built index.js file, and replace `your-api-token-here` with your actual Raindrop.io API token.
 
 ### Using with Other MCP Clients
 
@@ -116,7 +117,7 @@ Show me details for bookmark ID 12345
 
 ### Project Structure
 ```
-raindrop-mcp/
+H9K-Raindrop-MCP/
 ├── src/
 │   ├── index.ts           # Main MCP server
 │   ├── raindrop-client.ts # Raindrop.io API client

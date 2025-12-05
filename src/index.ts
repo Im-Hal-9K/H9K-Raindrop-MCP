@@ -317,7 +317,7 @@ const tools: Tool[] = [
 // Create server instance
 const server = new Server(
   {
-    name: 'raindrop-mcp-server',
+    name: 'h9k-raindrop-mcp',
     version: '1.0.0',
   },
   {
@@ -573,7 +573,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('Raindrop MCP Server running on stdio');
+  console.error('H9K Raindrop MCP Server running on stdio');
 }
 
 main().catch((error) => {

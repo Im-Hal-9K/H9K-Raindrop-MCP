@@ -1,10 +1,10 @@
 {
-  "name": "raindrop-mcp-server",
+  "name": "h9k-raindrop-mcp",
   "version": "1.0.0",
-  "description": "MCP server for Raindrop.io bookmark management",
+  "description": "H9K Raindrop MCP - A powerful MCP server for Raindrop.io bookmark management",
   "type": "module",
   "bin": {
-    "raindrop-mcp": "./build/index.js"
+    "h9k-raindrop-mcp": "./build/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/raindrop-mcp.git"
+    "url": "https://github.com/YOUR_USERNAME/H9K-Raindrop-MCP.git"
   },
   "keywords": [
     "mcp",
@@ -22,14 +22,15 @@
     "raindrop.io",
     "bookmarks",
     "ai",
-    "claude"
+    "claude",
+    "h9k"
   ],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/raindrop-mcp/issues"
+    "url": "https://github.com/YOUR_USERNAME/H9K-Raindrop-MCP/issues"
   },
-  "homepage": "https://github.com/YOUR_USERNAME/raindrop-mcp#readme",
+  "homepage": "https://github.com/YOUR_USERNAME/H9K-Raindrop-MCP#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "axios": "^1.7.2",
